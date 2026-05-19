@@ -1,0 +1,5 @@
+project:
+  name: "My AI Harnessed Project"
+  stack: "python" # Can be changed to "typescript", "c-autosar", etc.
+  test_command: "pytest"
+  lint_command: "flake8"

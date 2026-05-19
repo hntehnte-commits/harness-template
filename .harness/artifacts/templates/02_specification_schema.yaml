@@ -1,0 +1,10 @@
+# 02_specification_schema.yaml
+schema_version: "1.0"
+title: ""
+description: ""
+user_requirements:
+  - ""
+edge_cases:
+  - ""
+acceptance_criteria:
+  - ""

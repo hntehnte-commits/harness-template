@@ -1,0 +1,14 @@
+# 03_design_schema.yaml
+schema_version: "1.0"
+architecture_pattern: ""
+components:
+  - name: ""
+    responsibility: ""
+    dependencies: []
+data_structures:
+  - name: ""
+    fields: []
+api_contracts:
+  - signature: ""
+    inputs: []
+    outputs: []
