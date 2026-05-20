@@ -1,81 +1,74 @@
-# Agent Harness Architecture: Prompt-Based Design
+# Arquitectura del Arnés Multi-Agente: Diseño Basado en Prompts y Transpilación Dinámica
 
-This document defines the architecture and workflow for a generic **Agent Harness**, designed entirely around **Markdown Prompts**. It transforms raw AI autonomy into controlled, predictable, and verifiable engineering work.
+Este documento define la arquitectura y el flujo de trabajo para el **Arnés Multi-Agente**, diseñado de forma modular en torno a **Markdown Prompts** y **Directivas de Contexto**. Este sistema transforma la autonomía de los modelos de IA en un ciclo de desarrollo de software estructurado, predecible y rigurosamente verificado mediante TDD.
 
-## 1. Directory Architecture (Agnostic)
+---
 
-The structure is designed to separate responsibilities and isolate state. It relies on the AI reading these files to assume roles or learn rules.
+## 1. Arquitectura de Directorios y Separación de Responsabilidades
+
+El arnés se divide estrictamente en dos partes: la **Fuente de Verdad (Plantillas)** y el **Entorno Transpilado (Destino)**.
 
 ```text
-/ (Project Root)
-├── AGENTS.md                   # Global Context: Defines source code locations and project map.
-├── .harness/                   # The Core Harness Environment
-│   ├── roles/                  # System Prompts for Sub-agents (Workers)
-│   │   ├── orchestrator.md     # Central coordinator. Delegates, does not execute code.
-│   │   ├── spec_agent.md       # Defines contracts and specifications.
-│   │   ├── dev_agent.md        # Writes code purely focused on passing tests.
-│   │   └── qa_agent.md         # Verifies deliverables and updates memory.
-│   │
-│   ├── artifacts/              # Source of Truth and State Machine
-│   │   ├── templates/          # YAML schemas for the agents to fill out.
-│   │   └── current_run/        # State of the current task (e.g., 03_design.yaml).
-│   │
-│   ├── memory/                 # Persistence System
-│   │   ├── architecture_decisions.md # Immutable technical constraints.
-│   │   └── lessons_learned.md  # Dynamic memory of bugs and gotchas to avoid.
-│   │
-│   ├── skills/                 # Protocols and Operating Procedures
-│   │   ├── tdd_gatekeeper.md   # Step-by-step instructions for Red-Green-Refactor.
-│   │   └── state_management.md # Instructions on how to manage YAML artifacts safely.
-│   │
-│   └── config.yaml             # Tech stack configuration for the current project.
+/ (Raíz del Proyecto)
+├── AGENTS.md                       # Manifiesto y Catálogo Central: Indexa los agentes y habilidades reales del espacio de trabajo
+├── adapt_harness.py                # Redireccionador/Launcher ligero de la CLI
+├── .gitignore                      # Configuración de exclusiones de control de versiones
+│
+├── .harness/                       # PLANTILLAS FUENTE (Source of Truth)
+│   ├── config.yaml                 # Configuración por defecto (Stack, comandos de pruebas/linters)
+│   ├── roles/                      # Prompts maestros para subagentes globales (Orchestrator, Dev, QA, Spec, Docs)
+│   ├── skills/                     # Habilidades globales (state_management, tdd_gatekeeper)
+│   ├── memory/                     # Archivos de memoria base compartida (ADR y lecciones aprendidas)
+│   ├── artifacts/templates/        # Esquemas base de entregables (Planes, tareas, walkthroughs)
+│   ├── profiles/                   # Perfiles por stack de desarrollo (embedded-c, python, javascript)
+│   └── adaptation/                 # Transpilador y Entorno Virtual
+│       ├── .venv/                  # Entorno virtual aislado y auto-gestionado
+│       ├── requirements.txt        # Dependencias de Python del transpilador
+│       └── scripts/                # Módulos descompuestos del transpilador (.py)
+│
+└── .opencode/                      # ENTORNO GENERADO (Transpiled Target)
+    ├── config.yaml                 # Configuración del perfil de stack activo
+    ├── agents/                     # Roles transpilados y traducidos al formato de la herramienta
+    ├── skills/                     # Catálogo unificado y único de habilidades transpiladas (Core + Perfil)
+    ├── memory/                     # Carpeta de persistencia activa del agente local
+    └── artifacts/current_run/      # Máquina de estados (Esquemas YAML de la tarea activa)
 ```
 
 ---
 
-## 2. The 5 Design Pillars
+## 2. Los 5 Pilares del Diseño Técnico
 
-### 2.1. Orchestration (Orchestrator)
-The **Orchestrator** acts as an *Engineering Manager*. It maintains high-level context by reading `AGENTS.md` and the artifacts.
-- **Golden Rule:** It never writes or executes source code.
-- **Mechanism:** It delegates tasks by instructing the AI (e.g., Claude Code) to load the prompt of another role (e.g., `/.harness/roles/dev_agent.md`).
+### 2.1. Orquestación Rigurosa (Orchestrator Role)
+El **Orchestrator** actúa como el *Director del Proyecto* o *Engineering Manager*. Mantiene el contexto de alto nivel leyendo [`AGENTS.md`](file:///Users/hazaeltrejo/Documents/harness_template/AGENTS.md) y los artefactos de la tarea actual.
+* **Regla de Oro**: Jamás ejecuta código de producción ni escribe parches directamente.
+* **Mecanismo**: Delega la resolución de subtareas instruyendo al modelo a adoptar el rol de otros subagentes especializados (ej. `/.opencode/agents/dev.md`).
 
-### 2.2. Artifacts & Grammar (State Machine)
-The development process is a **finite state machine** driven by YAML files.
-*   `02_specification.yaml`: Exact requirements, edge cases, and acceptance criteria.
-*   `03_design.yaml`: Architecture, interfaces, and function signatures.
-If the agent loses context or the session closes, the Orchestrator simply reads `current_run/` to know exactly where it left off.
+### 2.2. Máquina de Estados Guiada por Artefactos
+El flujo de desarrollo se modela mediante una máquina de estados finitos basada en documentos y esquemas estructurados:
+* `implementation_plan.md`: Requerimientos, criterios de aceptación, diseño técnico y riesgos.
+* `task.md`: TODO list dinámico para hacer seguimiento exhaustivo y en tiempo real del progreso.
+* `walkthrough.md`: Resumen detallado de cambios realizados y resultados de verificación.
 
-### 2.3. Runtime Discipline (Strict TDD Gatekeeper)
-The *Discipline* component is injected via the `tdd_gatekeeper.md` skill. The *Dev Agent* is forced to read this skill.
-1.  **Red Phase:** The agent must write a failing test and run it in the terminal. If it passes (green), the agent is instructed to reject it for being a fake test.
-2.  **Green Phase:** The agent writes the code. If the test fails, it corrects it.
-3.  **Refactor Phase:** Clean up.
+### 2.3. Disciplina en Tiempo de Ejecución (Strict TDD Gatekeeper)
+El *Dev Agent* opera bajo el control estricto de la habilidad `strict-tdd-gatekeeper`:
+1. **Fase Roja (Red)**: Obliga a escribir una prueba que falle antes de programar la solución. Si la prueba pasa antes de tiempo, el agente debe rechazarla por ser una prueba falsa.
+2. **Fase Verde (Green)**: Se programa la funcionalidad mínima necesaria para superar la prueba.
+3. **Refactorización (Refactor)**: Optimización del código manteniendo las pruebas en verde.
 
-### 2.4. Persistence (Memory System)
-Memory is divided into explicit Markdown files to prevent hallucination:
-*   **Long-Term Memory (ADR):** `architecture_decisions.md` (e.g., "We mock the database using X, not Y").
-*   **Dynamic Memory:** `lessons_learned.md`. The QA Agent appends notes here after every task so future sessions don't repeat the same mistakes.
+### 2.4. Persistencia Segmentada (Sistema de Memoria)
+La memoria del agente se divide para evitar alucinaciones:
+* **Decisiones de Arquitectura (ADR)**: `architecture_decisions.md` (Constraints técnicos estáticos).
+* **Memoria Dinámica**: `lessons_learned.md` (El agente de QA registra errores, bugs encontrados y parches aplicados para que futuras sesiones no los repitan).
 
-### 2.5. Skills Registry
-Instead of giving the agent open access to guess how to do things, we provide explicit protocols in `/.harness/skills/`. The orchestrator restricts these skills according to the phase.
+### 2.5. Catálogo Modular de Habilidades (Skills Registry)
+Las capacidades se registran como plugins o protocolos dentro de `/.opencode/skills/`. El Orquestador restringe el uso de estas habilidades al agente adecuado en la fase correcta.
 
 ---
 
-## 3. Workflow Example
+## 3. Coexistencia Multi-Perfil y Transpilador Autogestionado
 
-1.  **Bootstrapping & Context Loading:**
-    *   User provides the task. The AI reads `AGENTS.md` and `/.harness/roles/orchestrator.md`.
-    *   The Orchestrator reads `config.yaml` and hydrates the long-term memory.
+El transpilador descompuesto permite que múltiples perfiles tecnológicos (`embedded-c-developer`, `python-developer`, `javascript-developer`) coexistan de forma concurrente:
 
-2.  **Contractual Phase (Spec & Design):**
-    *   Orchestrator delegates to the *Spec Agent*.
-    *   The *Spec Agent* fills out `02_specification.yaml` and `03_design.yaml`.
-
-3.  **Discipline Phase (The TDD Loop):**
-    *   Orchestrator delegates to the *Dev Agent*.
-    *   *Dev Agent* reads the `tdd_gatekeeper.md` skill, writes the failing test, verifies failure, writes code, and verifies success.
-
-4.  **Audit and Closure:**
-    *   Orchestrator delegates to the *QA Agent*.
-    *   The QA Agent audits the code, updates `lessons_learned.md`, and closes the task.
+1. **Soportes Concurrentes**: El motor compila las plantillas transversales y monta individualmente las habilidades, memorias y configuraciones de cada perfil.
+2. **Carga Dinámica en Caliente (Hot-Loading)**: Los agentes inspeccionan el tipo de archivos en el espacio de trabajo en tiempo de ejecución, detectando qué stack usar y parametrizando dinámicamente linters, suites de tests y modos de bypass (ej. `bypass_qa_execution` para compilaciones cruzadas complejas en sistemas embebidos).
+3. **Limpieza y Gestión Atómica**: Las opciones de instalación y remoción aíslan perfiles sin dejar rastro de código no deseado, reduciendo drásticamente el uso de tokens y optimizando el contexto de los modelos locales.

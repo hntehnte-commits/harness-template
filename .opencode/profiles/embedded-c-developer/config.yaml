@@ -1,0 +1,6 @@
+project:
+  name: "Embedded C Project (Traveo II)"
+  stack: "c"
+  test_command: "make test"
+  lint_command: "cppcheck --enable=all ."
+  bypass_qa_execution: true

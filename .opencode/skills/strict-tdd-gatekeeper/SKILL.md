@@ -1,3 +1,8 @@
+---
+name: strict-tdd-gatekeeper
+description: Enforce strict Red-Green-Refactor testing protocol during implementation, preventing application logic from being written without a verifying unit test.
+---
+
 # Skill: Strict TDD Gatekeeper
 
 ## Purpose
@@ -8,11 +13,11 @@ Enforce strict Red-Green-Refactor testing protocol during implementation, preven
 ## TDD Step-by-Step Checklist
 
 ### Phase 1: Contract Analysis
-1. Read the design file `/.harness/artifacts/current_run/03_design.yaml` to identify the required functions, parameters, and signatures.
-2. Retrieve the `active_profile` from `/.harness/artifacts/current_run/state.yaml`.
+1. Read the design file `/.opencode/artifacts/current_run/03_design.yaml` to identify the required functions, parameters, and signatures.
+2. Retrieve the `active_profile` from `/.opencode/artifacts/current_run/state.yaml`.
 3. Load the `bypass_qa_execution` flag:
-   - Check if `active_profile` configuration file exists at `/.harness/profiles/<active_profile>/config.yaml`. If it does, read `project.bypass_qa_execution` from there.
-   - Otherwise, fallback to the base configuration at `/.harness/config.yaml`.
+   - Check if `active_profile` configuration file exists at `/.opencode/profiles/<active_profile>/config.yaml`. If it does, read `project.bypass_qa_execution` from there.
+   - Otherwise, fallback to the base configuration at `/.opencode/config.yaml`.
 4. Do NOT write any application code at this stage.
 
 ### Phase 2: Red Phase (Failing Test)

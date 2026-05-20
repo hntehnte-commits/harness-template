@@ -1,0 +1,12 @@
+# Virtual environment
+.harness/adaptation/.venv/
+
+# Python compiled cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Generated adapter outputs (compiled harness format)
+.opencode/
+.clinerules
+.cursorrules

@@ -1,0 +1,6 @@
+project:
+  name: "Javascript Web Application"
+  stack: "javascript"
+  test_command: "npm test"
+  lint_command: "eslint ."
+  bypass_qa_execution: false

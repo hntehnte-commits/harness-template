@@ -1,0 +1,6 @@
+project:
+  name: "Python Application Project"
+  stack: "python"
+  test_command: "pytest"
+  lint_command: "flake8"
+  bypass_qa_execution: false

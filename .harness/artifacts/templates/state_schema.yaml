@@ -1,0 +1,11 @@
+# Schema for tracking execution state of local models
+state:
+  current_phase: "Initialization | Contract | Implementation | Audit | Documentation | Complete"
+  active_agent: "orchestrator | spec | dev | qa | docs"
+  plan_approved: false # MUST be set to true by the user/orchestrator to transition from Contract to Implementation phase
+  active_profile: "default" # Dynamically detected by the orchestrator (e.g. embedded-c-developer, python-developer, etc.)
+  task_checklist:
+    - task: "Description of the unit of work"
+      status: "pending | in_progress | completed"
+  test_status: "unknown | passing | failing"
+  last_error: "String containing error output, stack trace, or failure reasons if any"
