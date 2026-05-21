@@ -127,8 +127,38 @@ def compile_profile_overlay(profile, is_default=False):
     profile_skills = os.path.join(profile_dir, "skills")
     if os.path.exists(profile_skills):
         for filename in os.listdir(profile_skills):
-            if filename.endswith(".md"):
-                filepath = os.path.join(profile_skills, filename)
+            filepath = os.path.join(profile_skills, filename)
+            if os.path.isdir(filepath):
+                skill_md_path = os.path.join(filepath, "SKILL.md")
+                if not os.path.exists(skill_md_path):
+                    skill_md_path = os.path.join(filepath, f"{filename}.md")
+                
+                if os.path.exists(skill_md_path):
+                    title, desc, content = extract_metadata(skill_md_path)
+                    skill_name = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+                    skill_dir = os.path.join(".opencode/skills", skill_name)
+                    os.makedirs(skill_dir, exist_ok=True)
+                    
+                    for k, v in REPLACEMENTS.items():
+                        content = content.replace(k, v)
+                    
+                    frontmatter = get_frontmatter(title, desc, is_skill=True)
+                    with open(os.path.join(skill_dir, "SKILL.md"), "w", encoding="utf-8") as f:
+                        f.write(frontmatter + "\n" + content)
+                    print(f"  + Skill de perfil generada (directorio): .opencode/skills/{skill_name}/SKILL.md")
+                    
+                    # Copiar recursivamente el resto del directorio
+                    for root, dirs, files in os.walk(filepath):
+                        for file in files:
+                            src_file = os.path.join(root, file)
+                            rel_path = os.path.relpath(src_file, filepath)
+                            if rel_path in ["SKILL.md", f"{filename}.md"]:
+                                continue
+                            dest_file = os.path.join(skill_dir, rel_path)
+                            os.makedirs(os.path.dirname(dest_file), exist_ok=True)
+                            shutil.copy2(src_file, dest_file)
+                            print(f"    + Archivo de skill de perfil copiado: {dest_file}")
+            elif filename.endswith(".md"):
                 title, desc, content = extract_metadata(filepath)
                 skill_name = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
                 skill_dir = os.path.join(".opencode/skills", skill_name)
@@ -167,8 +197,19 @@ def remove_profile_overlay(profile_name):
     src_profile_skills = os.path.join(".harness/profiles", profile_name, "skills")
     if os.path.exists(src_profile_skills):
         for filename in os.listdir(src_profile_skills):
-            if filename.endswith(".md"):
-                filepath = os.path.join(src_profile_skills, filename)
+            filepath = os.path.join(src_profile_skills, filename)
+            if os.path.isdir(filepath):
+                skill_md_path = os.path.join(filepath, "SKILL.md")
+                if not os.path.exists(skill_md_path):
+                    skill_md_path = os.path.join(filepath, f"{filename}.md")
+                if os.path.exists(skill_md_path):
+                    title, desc, _ = extract_metadata(skill_md_path)
+                    skill_name = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+                    skill_dir = os.path.join(".opencode/skills", skill_name)
+                    if os.path.exists(skill_dir):
+                        shutil.rmtree(skill_dir, ignore_errors=True)
+                        print(f"  - Skill de perfil removida (directorio): .opencode/skills/{skill_name}")
+            elif filename.endswith(".md"):
                 title, desc, _ = extract_metadata(filepath)
                 skill_name = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
                 skill_dir = os.path.join(".opencode/skills", skill_name)
@@ -240,8 +281,38 @@ def compile_for_opencode(profile=None):
     # 1.2. Transpilar Skills Core
     if os.path.exists(".harness/skills"):
         for filename in os.listdir(".harness/skills"):
-            if filename.endswith(".md"):
-                filepath = os.path.join(".harness/skills", filename)
+            filepath = os.path.join(".harness/skills", filename)
+            if os.path.isdir(filepath):
+                skill_md_path = os.path.join(filepath, "SKILL.md")
+                if not os.path.exists(skill_md_path):
+                    skill_md_path = os.path.join(filepath, f"{filename}.md")
+                
+                if os.path.exists(skill_md_path):
+                    title, desc, content = extract_metadata(skill_md_path)
+                    skill_name = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+                    skill_dir = os.path.join(".opencode/skills", skill_name)
+                    os.makedirs(skill_dir, exist_ok=True)
+                    
+                    for k, v in REPLACEMENTS.items():
+                        content = content.replace(k, v)
+                    
+                    frontmatter = get_frontmatter(title, desc, is_skill=True)
+                    with open(os.path.join(skill_dir, "SKILL.md"), "w", encoding="utf-8") as f:
+                        f.write(frontmatter + "\n" + content)
+                    print(f"  + Skill core generada (directorio): .opencode/skills/{skill_name}/SKILL.md")
+                    
+                    # Copiar otros archivos recursivamente, preservando subdirectorios (ej. assets)
+                    for root, dirs, files in os.walk(filepath):
+                        for file in files:
+                            src_file = os.path.join(root, file)
+                            rel_path = os.path.relpath(src_file, filepath)
+                            if rel_path in ["SKILL.md", f"{filename}.md"]:
+                                continue
+                            dest_file = os.path.join(skill_dir, rel_path)
+                            os.makedirs(os.path.dirname(dest_file), exist_ok=True)
+                            shutil.copy2(src_file, dest_file)
+                            print(f"    + Archivo copiado: {dest_file}")
+            elif filename.endswith(".md"):
                 title, desc, content = extract_metadata(filepath)
                 skill_name = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
                 skill_dir = os.path.join(".opencode/skills", skill_name)
