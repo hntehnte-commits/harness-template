@@ -179,7 +179,7 @@ class RegistryBuilder:
             use_opencode: Si True, usa paths de .opencode, sino .harness
         """
         if not os.path.exists(agents_md_path):
-            print(f"❌ No se encontró {agents_md_path}")
+            print(f"[ERR] No se encontró {agents_md_path}")
             return False
         
         # Escanear y construir
@@ -231,7 +231,7 @@ class RegistryBuilder:
         with open(agents_md_path, "w", encoding="utf-8") as f:
             f.write(content)
         
-        print(f"✅ AGENTS.md sincronizado:")
+        print(f"[OK] AGENTS.md sincronizado:")
         print(f"   + {len(self.agents)} agentes")
         print(f"   + {len(self.skills)} skills")
         

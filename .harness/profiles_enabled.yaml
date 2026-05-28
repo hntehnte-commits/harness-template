@@ -1,0 +1,27 @@
+# profiles_enabled.yaml
+# Configuración de perfiles activos del Harness
+# Los perfiles activos determinan qué skills se compilan y cargan
+
+# Perfiles disponibles: python, embedded-c, javascript, core
+# - core: Skills universales (TDD, git, etc.)
+# - python: Skills específicos de Python
+# - embedded-c: Skills para C embebido (AUTOSAR, memoria, etc.)
+# - javascript: Skills para JavaScript/TypeScript
+
+profiles:
+  enabled:
+    - core              # ✅ Siempre habilitado (TDD Gatekeeper, etc.)
+    - python            # ✅ Perfil activo por defecto
+    # - embedded-c       # ❌ Deshabilitado (descomenta si lo necesitas)
+    # - javascript       # ❌ Deshabilitado (descomenta si lo necesitas)
+
+# Optimización: solo compilar skills de perfiles activos
+# Resultado esperado:
+# - Sin cambio: 280MB en .opencode/
+# - Con solo core + python: ~95MB (66% reducción)
+# - Con solo core + embedded-c: ~120MB (57% reducción)
+
+metadata:
+  last_updated: "2026-05-28"
+  context_window_optimization: true
+  compile_only_active_profiles: true

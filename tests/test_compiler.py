@@ -2,12 +2,14 @@
 tests/test_compiler.py
 Suite de pruebas para el compilador del Harness
 Verifica transpilación correcta de agentes, skills y artefactos
+Incluye pruebas para Sprint 2: lazy-loading, profiles, cache
 """
 import unittest
 import os
 import shutil
 import sys
 import tempfile
+import json
 from pathlib import Path
 
 # Agregar scripts al path para importar
@@ -22,6 +24,8 @@ from path_translator import (
     translate_and_write,
     REPLACEMENTS
 )
+from lazy_loader import SkillRegistry, ProfileAwareLoader
+from cache_manager import DecisionsCache, ContextWindowTracker
 
 
 class TestPathTranslator(unittest.TestCase):
@@ -111,13 +115,14 @@ class TestTranspilerCore(unittest.TestCase):
             shutil.rmtree(self.temp_dir)
     
     def test_setup_directories(self):
-        """Verifica creación de estructura de directorios"""
+        """Verifica creación de estructura de directorios incluyendo core/"""
         self.transpiler.setup_directories()
         
         required_dirs = [
             os.path.join(self.temp_dir, ".opencode/agents"),
             os.path.join(self.temp_dir, ".opencode/skills"),
             os.path.join(self.temp_dir, ".opencode/memory"),
+            os.path.join(self.temp_dir, ".opencode/core"),
             os.path.join(self.temp_dir, ".opencode/artifacts/templates"),
             os.path.join(self.temp_dir, ".opencode/artifacts/current_run")
         ]
@@ -136,6 +141,101 @@ class TestTranspilerCore(unittest.TestCase):
         for input_name, expected in test_cases:
             result = TranspilerCore._sanitize_skill_name(input_name)
             self.assertEqual(result, expected)
+    
+    def test_compile_core_scripts(self):
+        """Verifica copia de scripts core (lazy_loader, cache_manager)"""
+        # Crear directorio de origen simulado
+        src_scripts = os.path.join(self.temp_dir, ".harness/adaptation/scripts")
+        os.makedirs(src_scripts, exist_ok=True)
+        
+        # Crear archivos fuente simulados
+        for script in ["lazy_loader.py", "cache_manager.py"]:
+            with open(os.path.join(src_scripts, script), "w") as f:
+                f.write(f"# {script}\nprint('hello from {script}')")
+        
+        self.transpiler.setup_directories()
+        self.transpiler.compile_core_scripts()
+        
+        # Verificar que se copiaron
+        for script in ["lazy_loader.py", "cache_manager.py"]:
+            dest = os.path.join(self.temp_dir, ".opencode/core", script)
+            self.assertTrue(os.path.exists(dest), f"{script} no copiado a .opencode/core/")
+    
+    def test_compile_profiles_config(self):
+        """Verifica copia de profiles_enabled.yaml a .opencode/"""
+        # Crear archivo fuente simulado
+        harness_dir = os.path.join(self.temp_dir, ".harness")
+        os.makedirs(harness_dir, exist_ok=True)
+        
+        with open(os.path.join(harness_dir, "profiles_enabled.yaml"), "w") as f:
+            f.write("profiles:\n  enabled:\n    - core\n    - python\n")
+        
+        self.transpiler.setup_directories()
+        self.transpiler.compile_profiles_config()
+        
+        dest = os.path.join(self.temp_dir, ".opencode/profiles_enabled.yaml")
+        self.assertTrue(os.path.exists(dest))
+        with open(dest, "r") as f:
+            content = f.read()
+        self.assertIn("core", content)
+        self.assertIn("python", content)
+    
+    def test_profile_aware_compilation_filters_skills(self):
+        """Verifica que compile_skills filtra por perfil activo"""
+        # Configurar transpiler con perfil python activo
+        transpiler = TranspilerCore(self.temp_dir, profile_aware=True, active_profiles=["python"])
+        
+        # Crear skills fuente
+        skills_dir = os.path.join(self.temp_dir, ".harness/skills")
+        os.makedirs(skills_dir, exist_ok=True)
+        
+        # Skill perteneciente a python
+        with open(os.path.join(skills_dir, "python_testing.md"), "w") as f:
+            f.write("# Skill: Python Testing\nDesc\nContent")
+        
+        # Skill NO perteneciente a python (embedded-c)
+        with open(os.path.join(skills_dir, "c_memory_analyzer.md"), "w") as f:
+            f.write("# Skill: C Memory Analyzer\nDesc\nContent")
+        
+        transpiler.setup_directories()
+        transpiler.compile_skills()
+        
+        # Debería haber compilado solo 1 skill (python_testing)
+        self.assertEqual(transpiler.compiled_items["skills"], 1)
+    
+    def test_compile_all_includes_core_and_profiles(self):
+        """Verifica que compile_all copia scripts core y perfiles"""
+        # Crear estructura .harness mínima
+        harness_dir = os.path.join(self.temp_dir, ".harness")
+        os.makedirs(os.path.join(harness_dir, "roles"), exist_ok=True)
+        os.makedirs(os.path.join(harness_dir, "skills"), exist_ok=True)
+        os.makedirs(os.path.join(harness_dir, "memory"), exist_ok=True)
+        os.makedirs(os.path.join(harness_dir, "artifacts/templates"), exist_ok=True)
+        os.makedirs(os.path.join(harness_dir, "adaptation/scripts"), exist_ok=True)
+        
+        # Archivos requeridos
+        for script in ["lazy_loader.py", "cache_manager.py"]:
+            with open(os.path.join(harness_dir, "adaptation/scripts", script), "w") as f:
+                f.write(f"# {script}")
+        
+        with open(os.path.join(harness_dir, "profiles_enabled.yaml"), "w") as f:
+            f.write("profiles:\n  enabled:\n    - core\n")
+        
+        with open(os.path.join(harness_dir, "config.yaml"), "w") as f:
+            f.write("project:\n  name: test\n")
+        
+        # Ejecutar compilación
+        self.transpiler.compile_all("pointer text")
+        
+        # Verificar que se crearon los nuevos componentes
+        self.assertGreaterEqual(self.transpiler.compiled_items["core_scripts"], 2)
+        self.assertGreaterEqual(self.transpiler.compiled_items["profiles_config"], 1)
+        self.assertGreaterEqual(self.transpiler.compiled_items["config"], 1)
+        
+        # Verificar archivos en destino
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, ".opencode/core/lazy_loader.py")))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, ".opencode/core/cache_manager.py")))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, ".opencode/profiles_enabled.yaml")))
 
 
 class TestRegistryBuilder(unittest.TestCase):
@@ -185,6 +285,173 @@ class TestRegistryBuilder(unittest.TestCase):
         self.assertIn("pytest", result)
 
 
+class TestLazyLoader(unittest.TestCase):
+    """Pruebas para el módulo lazy_loader (Sprint 2.1)"""
+    
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.skills_dir = os.path.join(self.temp_dir, "skills")
+        os.makedirs(self.skills_dir, exist_ok=True)
+        
+        # Crear skill de prueba con frontmatter
+        skill_path = os.path.join(self.skills_dir, "test-skill")
+        os.makedirs(skill_path, exist_ok=True)
+        with open(os.path.join(skill_path, "SKILL.md"), "w") as f:
+            f.write("---\nname: test-skill\ndescription: A test skill\n---\n\n# Full content here")
+    
+    def tearDown(self):
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    def test_skill_registry_builds_index(self):
+        """Verifica que SkillRegistry construye índice sin cargar contenido"""
+        registry = SkillRegistry(skills_dir=self.skills_dir)
+        self.assertIn("test-skill", registry.skill_index)
+        self.assertEqual(registry.skill_index["test-skill"]["name"], "test-skill")
+    
+    def test_skill_registry_lazy_loads(self):
+        """Verifica que load_skill carga bajo demanda"""
+        registry = SkillRegistry(skills_dir=self.skills_dir)
+        
+        # No debería estar en caché todavía
+        self.assertNotIn("test-skill", registry.loaded_skills)
+        
+        # Cargar bajo demanda
+        content = registry.load_skill("test-skill")
+        self.assertIsNotNone(content)
+        self.assertIn("Full content here", content)
+        
+        # Ahora debería estar en caché
+        self.assertIn("test-skill", registry.loaded_skills)
+    
+    def test_skill_summary_uses_metadata_only(self):
+        """Verifica que get_skill_summary solo usa metadata, no carga contenido"""
+        registry = SkillRegistry(skills_dir=self.skills_dir)
+        summary = registry.get_skill_summary("test-skill")
+        
+        self.assertIsNotNone(summary)
+        self.assertIn("test-skill", summary)
+        self.assertIn("A test skill", summary)
+        
+        # No debe haber cargado el contenido completo
+        self.assertNotIn("test-skill", registry.loaded_skills)
+    
+    def test_context_window_analysis(self):
+        """Verifica análisis de context window"""
+        registry = SkillRegistry(skills_dir=self.skills_dir)
+        analysis = registry.get_context_window_analysis()
+        
+        self.assertEqual(analysis["total_skills"], 1)
+        self.assertEqual(analysis["loaded_skills"], 0)
+        self.assertIn("total_size_kb", analysis)
+        self.assertIn("savings_percent", analysis)
+    
+    def test_profile_aware_loader_mapping(self):
+        """Verifica mapeo de perfiles a skills"""
+        loader = ProfileAwareLoader(active_profiles=["core"])
+        skills = loader.get_active_skills()
+        
+        self.assertIn("strict-tdd-gatekeeper", skills)
+        self.assertIn("skill-creator", skills)
+        self.assertNotIn("python-clean-architecture", skills)
+    
+    def test_profile_aware_loader_multiple_profiles(self):
+        """Verifica combinación de skills de múltiples perfiles"""
+        loader = ProfileAwareLoader(active_profiles=["core", "python"])
+        skills = loader.get_active_skills()
+        
+        self.assertIn("strict-tdd-gatekeeper", skills)  # core
+        self.assertIn("python-clean-architecture", skills)  # python
+        self.assertNotIn("c-memory-analyzer-profile-specific", skills)  # embedded-c
+
+
+class TestCacheManager(unittest.TestCase):
+    """Pruebas para el módulo cache_manager (Sprint 2.4)"""
+    
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.cache_dir = os.path.join(self.temp_dir, "cache")
+    
+    def tearDown(self):
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    def test_store_and_retrieve_decision(self):
+        """Verifica almacenar y recuperar decisiones"""
+        cache = DecisionsCache(cache_dir=self.cache_dir)
+        
+        key = cache.store_decision("test_category", "test_id", "mi_decision")
+        self.assertIsNotNone(key)
+        
+        result = cache.retrieve_decision("test_category", "test_id")
+        self.assertEqual(result, "mi_decision")
+    
+    def test_retrieve_nonexistent_returns_none(self):
+        """Verifica que decisión inexistente retorna None"""
+        cache = DecisionsCache(cache_dir=self.cache_dir)
+        result = cache.retrieve_decision("nonexistent", "id")
+        self.assertIsNone(result)
+    
+    def test_exists_check(self):
+        """Verifica método exists"""
+        cache = DecisionsCache(cache_dir=self.cache_dir)
+        
+        self.assertFalse(cache.exists("cat", "id"))
+        cache.store_decision("cat", "id", "value")
+        self.assertTrue(cache.exists("cat", "id"))
+    
+    def test_clear_category(self):
+        """Verifica limpieza por categoría"""
+        cache = DecisionsCache(cache_dir=self.cache_dir)
+        
+        cache.store_decision("cat_a", "id1", "val1")
+        cache.store_decision("cat_a", "id2", "val2")
+        cache.store_decision("cat_b", "id3", "val3")
+        
+        cache.clear_category("cat_a")
+        
+        self.assertIsNone(cache.retrieve_decision("cat_a", "id1"))
+        self.assertIsNone(cache.retrieve_decision("cat_a", "id2"))
+        self.assertIsNotNone(cache.retrieve_decision("cat_b", "id3"))
+    
+    def test_get_stats(self):
+        """Verifica estadísticas del caché"""
+        cache = DecisionsCache(cache_dir=self.cache_dir)
+        
+        cache.store_decision("cat_a", "id1", "val1")
+        cache.store_decision("cat_a", "id2", "val2")
+        cache.retrieve_decision("cat_a", "id1")  # 1 hit
+        
+        stats = cache.get_stats()
+        self.assertEqual(stats["total_decisions"], 2)
+        self.assertEqual(stats["total_hits"], 1)
+        self.assertIn("cat_a", stats["categories"])
+    
+    def test_context_window_tracker_snapshots(self):
+        """Verifica registro y comparación de snapshots"""
+        tracker = ContextWindowTracker(cache_dir=self.cache_dir)
+        
+        tracker.record_snapshot("Before optimization", {"tokens": 5000, "kb": 100})
+        tracker.record_snapshot("After optimization", {"tokens": 1000, "kb": 20})
+        
+        comparison = tracker.compare_snapshots(0, 1)
+        self.assertIn("improvements", comparison)
+        self.assertEqual(comparison["improvements"]["tokens"]["before"], 5000)
+        self.assertEqual(comparison["improvements"]["tokens"]["after"], 1000)
+        self.assertEqual(comparison["improvements"]["tokens"]["reduction"], 4000)
+    
+    def test_decisions_cache_persistence(self):
+        """Verifica que el caché persiste en disco"""
+        cache1 = DecisionsCache(cache_dir=self.cache_dir)
+        cache1.store_decision("persist", "test", "persisted_value")
+        del cache1
+        
+        # Crear nueva instancia (debe cargar desde disco)
+        cache2 = DecisionsCache(cache_dir=self.cache_dir)
+        result = cache2.retrieve_decision("persist", "test")
+        self.assertEqual(result, "persisted_value")
+
+
 class TestIntegration(unittest.TestCase):
     """Pruebas de integración"""
     
@@ -219,6 +486,8 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestPathTranslator))
     suite.addTests(loader.loadTestsFromTestCase(TestTranspilerCore))
     suite.addTests(loader.loadTestsFromTestCase(TestRegistryBuilder))
+    suite.addTests(loader.loadTestsFromTestCase(TestLazyLoader))
+    suite.addTests(loader.loadTestsFromTestCase(TestCacheManager))
     suite.addTests(loader.loadTestsFromTestCase(TestIntegration))
     
     runner = unittest.TextTestRunner(verbosity=2)

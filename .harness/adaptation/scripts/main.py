@@ -38,16 +38,16 @@ def main():
         elif args.command in ["claude", "cursor"]:
             adapt_to_tool(args.command)
         else:
-            print(f"❌ Comando desconocido: {args.command}")
+            print(f"[ERR] Comando desconocido: {args.command}")
             sys.exit(1)
         
-        print("\n✅ Operación completada exitosamente.")
+        print("\n[OK] Operación completada exitosamente.")
         
     except KeyboardInterrupt:
         print("\n\n👋 Ejecución cancelada por el usuario.")
         sys.exit(130)
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\n[ERR] Error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
