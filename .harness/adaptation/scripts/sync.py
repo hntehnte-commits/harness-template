@@ -84,41 +84,6 @@ def sync_manifest(use_opencode=None):
                             first_line = filename
                         skills_text += f"- **{first_line}** (`/.harness/skills/{filename}`)\n"
 
-        # Buscar y mapear todas las skills específicas de cada perfil en .harness/profiles/*/skills/
-        profiles_dir = ".harness/profiles"
-        if os.path.exists(profiles_dir):
-            for profile in sorted(os.listdir(profiles_dir)):
-                profile_path = os.path.join(profiles_dir, profile)
-                if os.path.isdir(profile_path):
-                    profile_skills_dir = os.path.join(profile_path, "skills")
-                    if os.path.exists(profile_skills_dir):
-                        for filename in sorted(os.listdir(profile_skills_dir)):
-                            filepath = os.path.join(profile_skills_dir, filename)
-                            if os.path.isdir(filepath):
-                                skill_md_path = os.path.join(filepath, "SKILL.md")
-                                if not os.path.exists(skill_md_path):
-                                    skill_md_path = os.path.join(filepath, f"{filename}.md")
-                                if os.path.exists(skill_md_path):
-                                    with open(skill_md_path, "r", encoding="utf-8") as f:
-                                        first_line = ""
-                                        for line in f:
-                                            if line.strip().startswith("# Skill:"):
-                                                first_line = line.strip().replace("# Skill: ", "").replace("# Skill:", "")
-                                                break
-                                        if not first_line:
-                                            first_line = filename
-                                        skills_text += f"- **{first_line}** (`/.harness/profiles/{profile}/skills/{filename}/SKILL.md`)\n"
-                            elif filename.endswith(".md"):
-                                with open(filepath, "r", encoding="utf-8") as f:
-                                    first_line = ""
-                                    for line in f:
-                                        if line.strip().startswith("# Skill:"):
-                                            first_line = line.strip().replace("# Skill: ", "").replace("# Skill:", "")
-                                            break
-                                    if not first_line:
-                                        first_line = filename
-                                    skills_text += f"- **{first_line}** (`/.harness/profiles/{profile}/skills/{filepath}`)\n"
-
     if os.path.exists("AGENTS.md"):
         with open("AGENTS.md", "r", encoding="utf-8") as f:
             content = f.read()

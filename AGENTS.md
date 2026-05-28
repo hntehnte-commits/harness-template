@@ -15,9 +15,12 @@ This project is governed by a strict **Multi-Agent Prompt Harness** located in `
 The AI agent must never act freely; it must adopt a specific "Role" to perform a task.
 
 ### Available Sub-Agents (Roles)
-- **Developer Agent** (`/.opencode/agents/dev.md`)
+- **Developer Agent** (`/.opencode/agents/developer.md`)
 - **Documentation Agent** (`/.opencode/agents/docs.md`)
+- **Embedded Developer Agent** (`/.opencode/agents/embedded-developer.md`)
+- **Javascript Developer Agent** (`/.opencode/agents/javascript-developer.md`)
 - **Orchestrator** (`/.opencode/agents/orchestrator.md`)
+- **Python Developer Agent** (`/.opencode/agents/python-developer.md`)
 - **QA Agent** (`/.opencode/agents/qa.md`)
 - **Specification Agent** (`/.opencode/agents/spec.md`)
 

@@ -1,9 +1,4 @@
----
-name: git-management
-description: Enforce safe Git operations in multi-repo and symlink-aware workspaces by validating repository root, using explicit paths, and blocking destructive commands.
----
-
-# Skill: Git Management (Robust)
+# Skill: Git Management
 
 ## Purpose
 Establish a secure execution protocol for Git operations in complex environments (multi-repo and symlink-heavy). The agent must prioritize **context verification** and **auditability** over direct execution.
