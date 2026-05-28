@@ -36,6 +36,7 @@ When the AI is first loaded into this project, it must read this `AGENTS.md` fil
 - **C Memory Analyzer (Profile Specific)** (`/.opencode/skills/c-memory-analyzer-profile-specific/SKILL.md`)
 - **Compilation and Analysis** (`/.opencode/skills/compilation-and-analysis/SKILL.md`)
 - **Embedded Deep Reasoning** (`/.opencode/skills/embedded-deep-reasoning/SKILL.md`)
+- **Git Management** (`/.opencode/skills/git-management/SKILL.md`)
 - **JavaScript Quality (Profile Specific)** (`/.opencode/skills/javascript-quality-profile-specific/SKILL.md`)
 - **Python Clean Architecture** (`/.opencode/skills/python-clean-architecture/SKILL.md`)
 - **Python Performance Optimization** (`/.opencode/skills/python-performance-optimization/SKILL.md`)

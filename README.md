@@ -1,83 +1,81 @@
 # 🛡️ Multi-Agent Prompt Harness
 
-Este repositorio contiene un **Arnés de Prompts Multi-Agente** avanzado y profesional diseñado para estructurar el comportamiento, flujo de trabajo y capacidades de agentes de Inteligencia Artificial (tales como **OpenCode**, **Claude Code**, **Roo Code**, o **Cursor**).
+This repository contains an advanced, professional **Multi-Agent Prompt Harness** designed to structure the behavior, workflow, and capabilities of Artificial Intelligence agents (such as **OpenCode**, **Claude Code**, **Roo Code**, or **Cursor**).
 
-El arnés implementa una arquitectura rigurosa orientada a la separación de roles, validación mediante TDD estricto y gestión concurrente de múltiples perfiles de desarrollo (C embebido, Python, y JavaScript) que se pueden instalar, remover o adaptar de forma dinámica.
+The harness implements a rigorous architecture focused on role separation, strict TDD validation, and concurrent management of multiple development profiles (embedded C, Python, and JavaScript) that can be dynamically installed, removed, or adapted.
 
 ---
 
-## 🚀 Inicio Rápido (First Run)
+## 🚀 Quick Start (First Run)
 
-Para arrancar el arnés y configurar tu herramienta de desarrollo favorita:
+To start the harness and configure your favorite development tool:
 
-1. **Clona el repositorio** en tu espacio de trabajo.
-2. **Ejecuta el script bootstrap** en la raíz:
+1. **Clone the repository** into your workspace.
+2. **Run the bootstrap script** from the root:
    ```bash
    python3 adapt_harness.py
    ```
-   *Nota: La primera vez que lo ejecutes, el script detectará la ausencia de dependencias locales, creará automáticamente un entorno virtual seguro bajo `.harness/adaptation/.venv/` e instalará los requerimientos en segundo plano de manera 100% transparente.*
+   *Note: The first time you run it, the script will detect the absence of local dependencies, automatically create a secure virtual environment under `.harness/adaptation/.venv/`, and install the requirements in the background in a 100% transparent manner.*
 
 ---
 
-## 🎨 Menú Interactivo en Terminal
+## 🎨 Interactive Terminal Menu
 
-Si ejecutas `python3 adapt_harness.py` sin argumentos, se desplegará una interfaz visual premium e interactiva:
+If you run `python3 adapt_harness.py` without arguments, a premium interactive visual interface will be displayed:
 
 ```
 ==========================================================
 🛡️  Harness Adaptation & Profile Manager - Interactive Menu
 ==========================================================
-  1. ⚙️  Compilar/Transpilar Arnés a formato OpenCode (opencode)
-  2. 📥  Instalar / Actualizar un Perfil en .opencode/ (install)
-  3. 🧹  Remover un Perfil de .opencode/ (remove)
-  4. 🤖  Adaptar Arnés para Claude Code / Roo Code (claude)
-  5. 💻  Adaptar Arnés para Cursor (cursor)
-  6. 🔄  Sincronizar catálogo AGENTS.md (sync)
-  7. ❌  Salir
+  1. ⚙️  Compile/Transpile Harness to OpenCode format (opencode)
+  2. 📥  Install / Update a Profile in .opencode/ (install)
+  3. 🧹  Remove a Profile from .opencode/ (remove)
+  4. 🤖  Adapt Harness for Claude Code / Roo Code (claude)
+  5. 💻  Adapt Harness for Cursor (cursor)
+  6. 🔄  Sync AGENTS.md catalog (sync)
+  7. ❌  Exit
 ==========================================================
 ```
 
-### Opciones Disponibles:
-* **Compilar para OpenCode (1)**: Transpila las plantillas origen bajo la carpeta `.harness/` al formato y estructura nativa de OpenCode (`.opencode/`).
-* **Instalar Perfil (2)**: Permite elegir dinámicamente qué perfil de desarrollo (`python-developer`, `embedded-c-developer`, `javascript-developer`) deseas instalar como sobrecapa en tu entorno de desarrollo.
-* **Remover Perfil (3)**: Elimina de forma limpia y selectiva un perfil y todas sus habilidades/directivas específicas para evitar fugas de contexto en el agente de IA.
-* **Adaptar para Claude Code / Roo Code / Cursor (4 y 5)**: Genera los archivos pointer correspondientes (`.clinerules` o `.cursorrules`) y sincroniza el manifiesto.
-* **Sincronizar Catálogo (6)**: Re-indexa de forma dinámica todos los agentes, roles y habilidades disponibles y actualiza el archivo maestro [`AGENTS.md`](file:///Users/hazaeltrejo/Documents/harness_template/AGENTS.md).
+### Available Options:
+* **Compile for OpenCode (1)**: Transpiles the source templates under `.harness/` to the native OpenCode format and structure (`.opencode/`).
+* **Install Profile (2)**: Dynamically choose which development profile (`python-developer`, `embedded-c-developer`, `javascript-developer`) to install as an overlay in your development environment.
+* **Remove Profile (3)**: Cleanly and selectively remove a profile and all its specific skills/directives to prevent context leaks in the AI agent.
+* **Adapt for Claude Code / Roo Code / Cursor (4 and 5)**: Generates the corresponding pointer files (`.clinerules` or `.cursorrules`) and syncs the manifest.
+* **Sync Catalog (6)**: Dynamically re-indexes all available agents, roles, and skills and updates the master [`AGENTS.md`](file:///Users/hazaeltrejo/Documents/harness_template/AGENTS.md) file.
 
 ---
 
-## 💻 Uso directo por Línea de Comandos (CLI)
+## 💻 Direct Command Line Usage (CLI)
 
-Si prefieres la terminal o estás automatizando flujos en un CI/CD, puedes usar argumentos de línea de comandos directamente:
+If you prefer the terminal or are automating flows in a CI/CD pipeline, you can use command-line arguments directly:
 
-* **Compilar todo el arnés para OpenCode**:
+* **Compile the entire harness for OpenCode**:
   ```bash
   python3 adapt_harness.py opencode
   ```
-* **Instalar un perfil específico**:
+* **Install a specific profile**:
   ```bash
   python3 adapt_harness.py install python-developer
   ```
-* **Remover un perfil específico**:
+* **Remove a specific profile**:
   ```bash
   python3 adapt_harness.py remove python-developer
   ```
-* **Adaptar arnés a Claude Code / Cursor**:
+* **Adapt harness for Claude Code / Cursor**:
   ```bash
   python3 adapt_harness.py claude
   python3 adapt_harness.py cursor
   ```
-* **Sincronizar catálogo de agentes**:
+* **Sync agent catalog**:
   ```bash
   python3 adapt_harness.py sync
   ```
 
----
+## 📂 Repository Structure
 
-## 📂 Estructura del Repositorio
-
-- [**`.harness/`**](file:///Users/hazaeltrejo/Documents/harness_template/.harness/): **La Fuente de Verdad**. Contiene las plantillas de roles, habilidades principales y perfiles que mantienes en tu repositorio. *(Ver el [README de `.harness/`](file:///Users/hazaeltrejo/Documents/harness_template/.harness/README.md) para más detalles).*
-- [**`adapt_harness.py`**](file:///Users/hazaeltrejo/Documents/harness_template/adapt_harness.py): Cargador y bootstrap autogestionado del entorno virtual de Python.
-- [**`AGENTS.md`**](file:///Users/hazaeltrejo/Documents/harness_template/AGENTS.md): Catálogo y manifiesto central dinámico que lee e indexa los agentes y habilidades reales de tu espacio de trabajo para dar contexto de alto nivel al Orquestador.
-- **`.opencode/`** *(Generado)*: Carpeta del arnés transpilado y listo para que la use el agente local en formato OpenCode.
-- **`.clinerules` / `.cursorrules`** *(Generado)*: Archivos de directivas/pointer listos para alimentar a Claude Code, Roo Code o Cursor.
+- [**`.harness/`**](file:///Users/hazaeltrejo/Documents/harness_template/.harness/): **The Source of Truth**. Contains role templates, core skills, and profiles that you maintain in your repository. *(See the [`.harness/` README](file:///Users/hazaeltrejo/Documents/harness_template/.harness/README.md) for details).*
+- [**`adapt_harness.py`**](file:///Users/hazaeltrejo/Documents/harness_template/adapt_harness.py): Self-managed Python virtual environment loader and bootstrap.
+- [**`AGENTS.md`**](file:///Users/hazaeltrejo/Documents/harness_template/AGENTS.md): Dynamic central catalog and manifest that reads and indexes the actual agents and skills in your workspace to provide high-level context to the Orchestrator.
+- **`.opencode/`** *(Generated)*: Transpiled harness folder ready for use by the local agent in OpenCode format.
+- **`.clinerules` / `.cursorrules`** *(Generated)*: Directive/pointer files ready to feed Claude Code, Roo Code, or Cursor.
