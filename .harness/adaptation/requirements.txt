@@ -1,2 +1,15 @@
 # requirements.txt
-# Agrega dependencias necesarias aquí si se requieren en el futuro.
+# Dependencias del transpilador del Harness
+# Este archivo es mínimo porque se diseñó con dependencias cero (solo stdlib)
+
+# Actualmente: No hay dependencias externas requeridas
+# El transpilador usa solo módulos estándar de Python:
+# - os, sys, re, pathlib, shutil (manipulación de archivos)
+# - argparse (CLI)
+
+# Dependencias futuras (commented out por ahora):
+# pyyaml>=6.0       - Para parsing YAML robusto
+# colorama>=0.4.4   - Para colores mejorados en Windows
+# pytest>=7.0       - Para testing (development)
+# pytest-cov>=3.0   - Para coverage (development)
+

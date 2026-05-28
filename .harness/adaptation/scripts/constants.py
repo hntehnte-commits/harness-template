@@ -1,4 +1,8 @@
 # constants.py
+"""
+constants.py - Constantes globales del Harness
+Incluye textos de instrucciones y tabla de reemplazos
+"""
 
 POINTER_TEXT = """# SYSTEM HARNESS DIRECTIVE
 You are operating within a strict multi-agent Harness system.
@@ -14,13 +18,9 @@ and then read `/.opencode/agents/orchestrator.md` to begin the initialization pr
 Do not proceed with the user's task until you have assumed the Orchestrator role.
 """
 
-REPLACEMENTS = {
-    "/.harness/roles/orchestrator.md": "/.opencode/agents/orchestrator.md",
-    "/.harness/roles/spec_agent.md": "/.opencode/agents/spec.md",
-    "/.harness/roles/dev_agent.md": "/.opencode/agents/dev.md",
-    "/.harness/roles/qa_agent.md": "/.opencode/agents/qa.md",
-    "/.harness/skills/state_management.md": "/.opencode/skills/state-management/SKILL.md",
-    "/.harness/skills/tdd_gatekeeper.md": "/.opencode/skills/strict-tdd-gatekeeper/SKILL.md",
-    "/.harness/": "/.opencode/",
-    ".harness/": ".opencode/"
-}
+# NOTA: REPLACEMENTS ahora está en path_translator.py para centralización
+# Esta línea se mantiene para compatibilidad hacia atrás
+from path_translator import REPLACEMENTS
+
+__all__ = ['POINTER_TEXT', 'POINTER_TEXT_OPENCODE', 'REPLACEMENTS']
+

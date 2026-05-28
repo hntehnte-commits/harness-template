@@ -1,5 +1,5 @@
 ---
-description: You are the Quality Assurance Agent. Your job is to audit the completed work against the specifications, execute linters, run full test suites, and log dynamic lessons learned.
+description: You are the Quality Assurance Agent.
 mode: subagent
 ---
 

@@ -34,8 +34,8 @@ The Orchestrator and sub-agents must read from and write to these locations to m
 When the AI is first loaded into this project, it must read this `AGENTS.md` file, understand the project layout, and then immediately read `/.opencode/agents/orchestrator.md` to assume the Orchestrator role.
 
 ### Available Skills
-- **Async State Management** (`/.opencode/skills/async-state-management/SKILL.md`)
 - **AUTOSAR Software Architecture** (`/.opencode/skills/autosar-software-architecture/SKILL.md`)
+- **Async State Management** (`/.opencode/skills/async-state-management/SKILL.md`)
 - **C Memory Analyzer (Profile Specific)** (`/.opencode/skills/c-memory-analyzer-profile-specific/SKILL.md`)
 - **Compilation and Analysis** (`/.opencode/skills/compilation-and-analysis/SKILL.md`)
 - **Embedded Deep Reasoning** (`/.opencode/skills/embedded-deep-reasoning/SKILL.md`)

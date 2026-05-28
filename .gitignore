@@ -7,6 +7,5 @@ __pycache__/
 *$py.class
 
 # Generated adapter outputs (compiled harness format)
-.opencode/
 .clinerules
 .cursorrules

@@ -1,6 +1,6 @@
 ---
 name: state-management
-description: To interact with the State Machine artifacts (`.harness/artifacts/current_run/`) safely, maintaining correct schemas and ensuring smooth transitions between agents.
+description: To interact with the State Machine artifacts (`.
 ---
 
 # Skill: State Management
