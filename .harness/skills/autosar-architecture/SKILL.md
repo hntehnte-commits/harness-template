@@ -28,11 +28,11 @@ Provide technical guidelines and architectural constraints for developing softwa
    ```c
    #define SWC_START_SEC_CODE
    #include "SWC_MemMap.h"
-   
+
    FUNC(void, SWC_CODE) SWC_RunnableFunc(void) {
        /* Runnable Logic */
    }
-   
+
    #define SWC_STOP_SEC_CODE
    #include "SWC_MemMap.h"
    ```

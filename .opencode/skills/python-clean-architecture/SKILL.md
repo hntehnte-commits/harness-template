@@ -29,7 +29,7 @@ Enforce SOLID principles and clean architecture boundaries (Entities, Use Cases,
 2. **Abstract Contracts**: Leverage Python's `abc` module to define strict boundaries:
    ```python
    from abc import ABC, abstractmethod
-   
+
    class AbstractUserRepository(ABC):
        @abstractmethod
        def save(self, user: User) -> None:

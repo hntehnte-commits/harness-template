@@ -21,7 +21,7 @@ Enforce type-safe development practices in TypeScript, eliminating the use of 'a
    interface Success { status: 'success'; data: string }
    interface Failure { status: 'error'; error: Error }
    type ApiResponse = Success | Failure;
-   
+
    function handle(res: ApiResponse) {
      if (res.status === 'success') {
        console.log(res.data); // Safely resolved to Success
@@ -38,7 +38,7 @@ Enforce type-safe development practices in TypeScript, eliminating the use of 'a
 1. **User-Defined Type Guards**: Implement custom type guards utilizing the `is` keyword to dynamically cast unknown variables safely:
    ```typescript
    interface User { name: string; email: string }
-   
+
    function isUser(data: any): data is User {
      return typeof data === 'object' && data !== null && 'name' in data && 'email' in data;
    }

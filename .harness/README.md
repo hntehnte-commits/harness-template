@@ -10,7 +10,7 @@ Este directorio constituye la **Fuente de Verdad Única (Single Source of Truth)
 .harness/
 ├── config.yaml                     # Configuración general y stack por defecto del proyecto
 ├── roles/                          # Prompts maestros de subagentes globales (Orchestrator, Dev, QA, etc.)
-├── skills/                         # Habilidades base transversales del arnés (ej. gestión de estados, TDD)
+├── skills/                         # Habilidades base transversales del arnés (cada skill es un directorio con SKILL.md)
 ├── memory/                         # Archivos de memoria base compartidos (arquitectura y lecciones aprendidas)
 ├── artifacts/
 │   └── templates/                  # Plantillas para planes de implementación, tareas y walkthroughs
@@ -36,14 +36,15 @@ Prompts en formato Markdown que definen la personalidad, responsabilidades y res
 * `docs_agent.md`: Genera documentación final limpia y walkthroughs de cambios.
 
 ### 2. `skills/` (Habilidades Core)
-Directivas técnicas modulares que inyectan capacidades especiales:
-* `state_management.md`: Reglas del flujo de estados mediante artefactos (`implementation_plan.md`, `task.md`, `walkthrough.md`).
-* `tdd_gatekeeper.md`: Lógica rigurosa de desarrollo guiado por pruebas antes de proceder con el código de producción.
+Directivas técnicas modulares que inyectan capacidades especiales. Cada skill es un directorio que contiene un `SKILL.md` y opcionalmente una subcarpeta `assets/` con scripts propios del skill.
+* `state-management/`: Reglas del flujo de estados mediante artefactos (`implementation_plan.md`, `task.md`, `walkthrough.md`).
+* `tdd-gatekeeper/`: Lógica rigurosa de desarrollo guiado por pruebas antes de proceder con el código de producción.
+* `git-management/`: Protocolos seguros de Git en entornos multi-repo.
 
 ### 3. `profiles/` (Perfiles y Capas de Especialización)
 Los perfiles permiten que coexistan concurrentemente múltiples stacks tecnológicos. Cada perfil puede extender el arnés core agregando:
 * `config.yaml`: Sobreescribe variables del stack activo, comandos de tests (`pytest`, `make test`, `npm test`), linters (`flake8`, `cppcheck`, `eslint`) y configuraciones como `bypass_qa_execution`.
-* `skills/`: Añade habilidades dedicadas a ese perfil (ej. `c_memory_analyzer.md` para el desarrollador de C). Estas se indexan automáticamente de manera unificada y única bajo `.opencode/skills/` y se listan en `AGENTS.md`.
+* `skills/`: Añade habilidades dedicadas a ese perfil (ej. `c-memory-analyzer/` para el desarrollador de C). Estas se indexan automáticamente de manera unificada y única bajo `.opencode/skills/` y se listan en `AGENTS.md`.
 * `memory/`: Inyecta directivas y trucos de diseño específicos a ese lenguaje.
 
 ---

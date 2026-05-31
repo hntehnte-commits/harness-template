@@ -135,30 +135,30 @@ class TranspilerCore:
             print("  [!] No se encontró directorio .harness/skills")
             return
         
-        # Mapeo de skills source a perfiles (snake_case filenames)
+        # Mapeo de skills source a perfiles (kebab-case directory names)
         profile_skill_map = {
             "python": [
-                "python_testing.md",
-                "python_clean_architecture.md",
-                "python_performance_optimization.md",
-                "state_management.md"
+                "python-testing-and-quality-profile-specific",
+                "python-clean-architecture",
+                "python-performance-optimization",
+                "state-management",
             ],
             "embedded-c": [
-                "c_memory_analyzer.md",
-                "compilation_and_analysis.md",
-                "autosar_architecture.md",
-                "embedded_deep_reasoning.md",
-                "trace32_cmm_scripting.md"
+                "c-memory-analyzer",
+                "compilation-and-analysis",
+                "autosar-architecture",
+                "embedded-deep-reasoning",
+                "trace32-cmm-scripting",
             ],
             "javascript": [
-                "javascript_quality.md",
-                "async_state_management.md",
-                "typescript_strict_safety.md"
+                "javascript-quality",
+                "async-state-management",
+                "typescript-strict-safety",
             ],
             "core": [
-                "tdd_gatekeeper.md",
+                "tdd-gatekeeper",
                 "skill-creator",
-                "file-translator"
+                "file-translator",
             ]
         }
         
@@ -172,53 +172,39 @@ class TranspilerCore:
         for filename in os.listdir(skills_dir):
             filepath = os.path.join(skills_dir, filename)
             
+            # Saltar el directorio global de scripts
+            if filename == "scripts":
+                continue
+            
             # Saltar skills no pertenecientes a perfiles activos
             if allowed_skills is not None and filename not in allowed_skills:
-                if not (os.path.isdir(filepath) and filename in allowed_skills):
-                    continue
+                continue
             
-            # Caso 1: Directorio con SKILL.md
-            if os.path.isdir(filepath):
-                skill_md_path = os.path.join(filepath, "SKILL.md")
-                if not os.path.exists(skill_md_path):
-                    skill_md_path = os.path.join(filepath, f"{filename}.md")
-                
-                if not os.path.exists(skill_md_path):
-                    continue
-                
-                title, desc, content = extract_metadata(skill_md_path)
-                content = apply_replacements(content)
-                
-                # Generar nombre de skill seguro
-                skill_name = self._sanitize_skill_name(title)
-                skill_dir = os.path.join(self.opencode_dir, "skills", skill_name)
-                os.makedirs(skill_dir, exist_ok=True)
-                
-                frontmatter = get_frontmatter(title, desc, is_skill=True)
-                with open(os.path.join(skill_dir, "SKILL.md"), "w", encoding="utf-8") as f:
-                    f.write(frontmatter + "\n" + content)
-                
-                # Copiar archivos adicionales (assets, etc.)
-                self._copy_skill_assets(filepath, skill_dir, [skill_md_path])
-                
-                self.compiled_items["skills"] += 1
-                print(f"  + Skill transpilada (dir): .opencode/skills/{skill_name}/SKILL.md")
+            # Solo procesar directorios (todos los skills ahora son directorios)
+            if not os.path.isdir(filepath):
+                continue
             
-            # Caso 2: Archivo .md individual
-            elif filename.endswith(".md"):
-                title, desc, content = extract_metadata(filepath)
-                content = apply_replacements(content)
-                
-                skill_name = self._sanitize_skill_name(title)
-                skill_dir = os.path.join(self.opencode_dir, "skills", skill_name)
-                os.makedirs(skill_dir, exist_ok=True)
-                
-                frontmatter = get_frontmatter(title, desc, is_skill=True)
-                with open(os.path.join(skill_dir, "SKILL.md"), "w", encoding="utf-8") as f:
-                    f.write(frontmatter + "\n" + content)
-                
-                self.compiled_items["skills"] += 1
-                print(f"  + Skill transpilada: .opencode/skills/{skill_name}/SKILL.md")
+            skill_md_path = os.path.join(filepath, "SKILL.md")
+            if not os.path.exists(skill_md_path):
+                continue
+            
+            title, desc, content = extract_metadata(skill_md_path)
+            content = apply_replacements(content)
+            
+            # Generar nombre de skill seguro
+            skill_name = self._sanitize_skill_name(title)
+            skill_dir = os.path.join(self.opencode_dir, "skills", skill_name)
+            os.makedirs(skill_dir, exist_ok=True)
+            
+            frontmatter = get_frontmatter(title, desc, is_skill=True)
+            with open(os.path.join(skill_dir, "SKILL.md"), "w", encoding="utf-8") as f:
+                f.write(frontmatter + "\n" + content)
+            
+            # Copiar archivos adicionales (assets, etc.)
+            self._copy_skill_assets(filepath, skill_dir, [skill_md_path])
+            
+            self.compiled_items["skills"] += 1
+            print(f"  + Skill transpilada (dir): .opencode/skills/{skill_name}/SKILL.md")
 
         # Copiar scripts específicos de habilidades si existen
         src_scripts = os.path.join(skills_dir, "scripts")

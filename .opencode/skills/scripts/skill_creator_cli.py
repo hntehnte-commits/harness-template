@@ -19,7 +19,7 @@ def sanitize_skill_name(title):
     return re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
 
 
-def create_skill(name, description, profile=None):
+def create_skill(name, description, profile=None, with_assets=False):
     """Crea la estructura del skill y gatilla la recompilación del arnés"""
     # Determinar ruta base del skill
     harness_dir = os.path.join(WORKSPACE_ROOT, ".harness")
@@ -52,21 +52,21 @@ def create_skill(name, description, profile=None):
 
 ---
 
-## 1. Procedimiento de Ejecución
-1. **Paso Inicial**: Define las precondiciones necesarias para que esta habilidad se ejecute correctamente.
-2. **Paso Secuencial**: Describe detalladamente el flujo de trabajo, las herramientas que debes usar y los criterios de aceptación.
+## 1. Execution Procedure
+1. **Initial Step**: Define the preconditions required for this skill to execute correctly.
+2. **Sequential Step**: Describe the workflow in detail, the tools you should use, and the acceptance criteria.
 
 ---
 
-## 2. Reglas de Validación
-* **Regla 1**: Describe criterios específicos que garanticen la calidad y exactitud del resultado.
-* **Regla 2**: Define límites y excepciones donde esta habilidad no deba ser aplicada.
+## 2. Validation Rules
+- **Rule 1**: Describe specific criteria to guarantee the quality and correctness of the result.
+- **Rule 2**: Define limitations and exceptions where this skill should not be applied.
 
 ---
 
-## 3. Auto-Corrección y Feedback
-* **Detección**: Si encuentras un error o inconsistencia en la salida, descríbelo aquí.
-* **Resolución**: Explica los pasos automáticos de corrección que debes seguir antes de interactuar de nuevo con el usuario.
+## 3. Self-Correction and Feedback
+- **Detection**: If you encounter an error or inconsistency in the output, describe it here.
+- **Resolution**: Explain the automatic correction steps to follow before interacting with the user again.
 """
     
     try:
@@ -74,9 +74,10 @@ def create_skill(name, description, profile=None):
             f.write(skill_content)
         print(f"[OK] Estructura creada en: .opencode/skills/{skill_folder_name}/SKILL.md")
         
-        # Crear sub-carpeta de assets
-        os.makedirs(os.path.join(skill_dir, "assets"), exist_ok=True)
-        print(f"[OK] Carpeta de assets creada.")
+        # Crear sub-carpeta de assets (solo si se solicita)
+        if with_assets:
+            os.makedirs(os.path.join(skill_dir, "assets"), exist_ok=True)
+            print(f"[OK] Carpeta de assets creada.")
         
         # Recompilar arnés
         print(f"[*] Recompilando el arnés para registrar el nuevo skill...")
@@ -108,10 +109,11 @@ def main():
     parser.add_argument("--name", required=True, help="Nombre legible de la habilidad (ej: 'Git Management')")
     parser.add_argument("--description", required=True, help="Propósito corto y conciso de la habilidad")
     parser.add_argument("--profile", help="Opcional. Perfil específico bajo el cual crear el skill")
+    parser.add_argument("--with-assets", action="store_true", help="Crear carpeta de assets para scripts propios del skill")
     
     args = parser.parse_args()
     
-    success = create_skill(args.name, args.description, args.profile)
+    success = create_skill(args.name, args.description, args.profile, args.with_assets)
     sys.exit(0 if success else 1)
 
 

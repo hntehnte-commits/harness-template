@@ -20,8 +20,24 @@ The harness strictly separates the **Source of Truth (Templates)** from the **Tr
 │   ├── roles/                      # Agent Master Prompts (Orchestrator, Dev, QA, Spec, Docs)
 │   │    └── scripts/               # Role-Specific Scripts: Python scripts executed purely by agents
 │   │         └── state_transition.py
-│   ├── skills/                     # Skill Master Prompts (state_management, tdd_gatekeeper, etc.)
-│   │    └── scripts/               # Skill-Specific Scripts: Python scripts executed purely by skills
+│   ├── skills/                     # Skill Master Prompts (each skill is a directory)
+│   │    ├── tdd-gatekeeper/        #   SKILL.md per skill directory
+│   │    ├── state-management/
+│   │    ├── skill-creator/
+│   │    ├── file-translator/
+│   │    ├── python-clean-architecture/
+│   │    ├── python-performance-optimization/
+│   │    ├── python-testing-and-quality-profile-specific/
+│   │    ├── javascript-quality/
+│   │    ├── async-state-management/
+│   │    ├── typescript-strict-safety/
+│   │    ├── c-memory-analyzer/
+│   │    ├── compilation-and-analysis/
+│   │    ├── autosar-architecture/
+│   │    ├── embedded-deep-reasoning/
+│   │    ├── trace32-cmm-scripting/
+│   │    ├── git-management/
+│   │    └── scripts/               # Global skill scripts
 │   │         ├── tdd_gatekeeper_runner.py
 │   │         └── skill_creator_cli.py
 │   ├── memory/                     # Shared Memory templates (ADR & Lessons Learned bases)
