@@ -25,13 +25,19 @@ def main():
     )
     parser.add_argument(
         "command",
-        choices=["claude", "cursor", "opencode", "compile", "sync"],
+        choices=["claude", "cursor", "opencode", "compile", "sync", "state"],
         help="Comando a ejecutar"
     )
     args = parser.parse_args()
 
     try:
-        if args.command == "sync":
+        if args.command == "state":
+            import state_manager
+            # Eliminar 'state' para delegar el parsing de sub-argumentos al state_manager
+            sys.argv.remove("state")
+            state_manager.main()
+            sys.exit(0)
+        elif args.command == "sync":
             sync_manifest()
         elif args.command in ["opencode", "compile"]:
             compile_for_opencode()

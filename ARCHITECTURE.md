@@ -1,74 +1,107 @@
-# Arquitectura del Arnés Multi-Agente: Diseño Basado en Prompts y Transpilación Dinámica
+# Multi-Agent Harness Architecture: Prompt-Driven Compilation & Dynamic Translation
 
-Este documento define la arquitectura y el flujo de trabajo para el **Arnés Multi-Agente**, diseñado de forma modular en torno a **Markdown Prompts** y **Directivas de Contexto**. Este sistema transforma la autonomía de los modelos de IA en un ciclo de desarrollo de software estructurado, predecible y rigurosamente verificado mediante TDD.
+This document defines the architectural design, workflow, and execution details for the **Multi-Agent Harness**. The system is modularly built around **Markdown Prompts** and **Context Directives**, enforcing a predictable, structured software development life cycle governed by a finite state machine and automated verification tools.
 
 ---
 
-## 1. Arquitectura de Directorios y Separación de Responsabilidades
+## 1. Directory Structure & Separation of Concerns
 
-El arnés se divide estrictamente en dos partes: la **Fuente de Verdad (Plantillas)** y el **Entorno Transpilado (Destino)**.
+The harness strictly separates the **Source of Truth (Templates)** from the **Transpiled Environment (Execution Target)**. This decoupling ensures that template source files are kept generic, stack-independent, and easily editable, while the target environment is dynamic, optimized, and optimized for AI tools.
 
 ```text
-/ (Raíz del Proyecto)
-├── AGENTS.md                       # Manifiesto y Catálogo Central: Indexa los agentes y habilidades reales del espacio de trabajo
-├── adapt_harness.py                # Redireccionador/Launcher ligero de la CLI
-├── .gitignore                      # Configuración de exclusiones de control de versiones
+/ (Workspace Root)
+├── AGENTS.md                       # Master Manifest: Catalogs active agents, skills, and CLI tools
+├── ARCHITECTURE.md                 # System Blueprint: Describes architectural pillars and workflows
+├── adapt_harness.py                # Redirection Shell: Light wrapper that executes the main compiler
+├── .gitignore                      # Version control exclusions
 │
-├── .harness/                       # PLANTILLAS FUENTE (Source of Truth)
-│   ├── config.yaml                 # Configuración por defecto (Stack, comandos de pruebas/linters)
-│   ├── roles/                      # Prompts maestros para subagentes globales (Orchestrator, Dev, QA, Spec, Docs)
-│   ├── skills/                     # Habilidades globales (state_management, tdd_gatekeeper)
-│   ├── memory/                     # Archivos de memoria base compartida (ADR y lecciones aprendidas)
-│   ├── artifacts/templates/        # Esquemas base de entregables (Planes, tareas, walkthroughs)
-│   ├── profiles/                   # Perfiles por stack de desarrollo (embedded-c, python, javascript)
-│   └── adaptation/                 # Transpilador y Entorno Virtual
-│       ├── .venv/                  # Entorno virtual aislado y auto-gestionado
-│       ├── requirements.txt        # Dependencias de Python del transpilador
-│       └── scripts/                # Módulos descompuestos del transpilador (.py)
+├── .harness/                       # SOURCE TEMPLATES (Source of Truth)
+│   ├── config.yaml                 # Base Config: Defines stack, default tests, and lint commands
+│   ├── roles/                      # Agent Master Prompts (Orchestrator, Dev, QA, Spec, Docs)
+│   │    └── scripts/               # Role-Specific Scripts: Python scripts executed purely by agents
+│   │         └── state_transition.py
+│   ├── skills/                     # Skill Master Prompts (state_management, tdd_gatekeeper, etc.)
+│   │    └── scripts/               # Skill-Specific Scripts: Python scripts executed purely by skills
+│   │         ├── tdd_gatekeeper_runner.py
+│   │         └── skill_creator_cli.py
+│   ├── memory/                     # Shared Memory templates (ADR & Lessons Learned bases)
+│   ├── artifacts/templates/        # Deliverable Schemas (Plans, tasks, walkthroughs)
+│   ├── profiles/                   # Multi-Stack Profiles (embedded-c, python, javascript, etc.)
+│   └── adaptation/                 # Compiler and Virtual Environment Isolation
+│       ├── .venv/                  # Virtual environment created and managed dynamically
+│       ├── requirements.txt        # Python dependency manifest (zero-dependency design)
+│       └── scripts/                # Compiler Engine Core Python scripts
+│           ├── state_manager.py    # Core State Manager (shared by roles and skills)
+│           └── transpiler_core.py  # Main transpiler script (manages compilation process)
 │
-└── .opencode/                      # ENTORNO GENERADO (Transpiled Target)
-    ├── config.yaml                 # Configuración del perfil de stack activo
-    ├── agents/                     # Roles transpilados y traducidos al formato de la herramienta
-    ├── skills/                     # Catálogo unificado y único de habilidades transpiladas (Core + Perfil)
-    ├── memory/                     # Carpeta de persistencia activa del agente local
-    └── artifacts/current_run/      # Máquina de estados (Esquemas YAML de la tarea activa)
+└── .opencode/                      # GENERATED ENVIRONMENT (Transpiled Target)
+    ├── config.yaml                 # Active Stack Profile configuration
+    ├── instructions.md             # Immediate pointer directing AI tools to AGENTS.md
+    ├── agents/                     # Transpiled and formatted agents (roles)
+    │    └── scripts/               # Compiled role scripts
+    ├── skills/                     # Compiled skills (filtered dynamically based on active profile)
+    │    └── scripts/               # Compiled skill scripts
+    ├── memory/                     # Active dynamic memory files (persistence layer)
+    └── artifacts/current_run/      # State Machine (Contains active task checklists and state YAML)
 ```
 
 ---
 
-## 2. Los 5 Pilares del Diseño Técnico
+## 2. Five Pillars of the Technical Design
 
-### 2.1. Orquestación Rigurosa (Orchestrator Role)
-El **Orchestrator** actúa como el *Director del Proyecto* o *Engineering Manager*. Mantiene el contexto de alto nivel leyendo [`AGENTS.md`](file:///Users/hazaeltrejo/Documents/harness_template/AGENTS.md) y los artefactos de la tarea actual.
-* **Regla de Oro**: Jamás ejecuta código de producción ni escribe parches directamente.
-* **Mecanismo**: Delega la resolución de subtareas instruyendo al modelo a adoptar el rol de otros subagentes especializados (ej. `/.opencode/agents/dev.md`).
+### 2.1. Rigorous Orchestration (Orchestrator Role)
+The **Orchestrator** acts as the *Project Manager* or *Engineering Director*. It supervises the high-level execution context by scanning [`AGENTS.md`](file:///Users/hazaeltrejo/Documents/harness_template/AGENTS.md) and active run state deliverables.
+* **Golden Rule**: The Orchestrator NEVER writes production code or implements parches directly.
+* **Mechanism**: It delegates work units by instructing the underlying model to assume specialized agent roles (e.g., `/.opencode/agents/developer.md`).
 
-### 2.2. Máquina de Estados Guiada por Artefactos
-El flujo de desarrollo se modela mediante una máquina de estados finitos basada en documentos y esquemas estructurados:
-* `implementation_plan.md`: Requerimientos, criterios de aceptación, diseño técnico y riesgos.
-* `task.md`: TODO list dinámico para hacer seguimiento exhaustivo y en tiempo real del progreso.
-* `walkthrough.md`: Resumen detallado de cambios realizados y resultados de verificación.
+### 2.2. Artifact-Driven State Machine
+The development lifecycle is governed by an explicit finite state machine based on structured deliverables and schemas:
+* `state.yaml`: Catalogs current phase, active agent, profile, checklist tasks, and test results, strictly validating against `state_schema.yaml`.
+* `implementation_plan.md`: Defines requirements, acceptance criteria, design schemas, and technical specifications.
+* `task.md`: Serves as a live TODO checklist, tracking completed and in-progress tasks.
+* `walkthrough.md`: Summarizes final implemented changes, lint outcomes, and test results.
 
-### 2.3. Disciplina en Tiempo de Ejecución (Strict TDD Gatekeeper)
-El *Dev Agent* opera bajo el control estricto de la habilidad `strict-tdd-gatekeeper`:
-1. **Fase Roja (Red)**: Obliga a escribir una prueba que falle antes de programar la solución. Si la prueba pasa antes de tiempo, el agente debe rechazarla por ser una prueba falsa.
-2. **Fase Verde (Green)**: Se programa la funcionalidad mínima necesaria para superar la prueba.
-3. **Refactorización (Refactor)**: Optimización del código manteniendo las pruebas en verde.
+### 2.3. Executable Execution Discipline (Strict TDD Gatekeeper)
+The *Developer Agent* operates under the strict constraints of the `strict-tdd-gatekeeper` skill:
+1. **Red Phase**: Force-writes a failing test signature before implementing any code. If the test passes early, it is flagged as a false test and rejected.
+2. **Green Phase**: Implements the minimum production code required to make the test pass.
+3. **Refactor Phase**: Cleans and optimizes the codebase while verifying linter rules and keeping the test suite green.
 
-### 2.4. Persistencia Segmentada (Sistema de Memoria)
-La memoria del agente se divide para evitar alucinaciones:
-* **Decisiones de Arquitectura (ADR)**: `architecture_decisions.md` (Constraints técnicos estáticos).
-* **Memoria Dinámica**: `lessons_learned.md` (El agente de QA registra errores, bugs encontrados y parches aplicados para que futuras sesiones no los repitan).
+### 2.4. Segmented Long-Term & Dynamic Memory
+Memory is compartmentalized to avoid hallucinations and maintain context sizes:
+* **Architecture Decisions (ADR)**: `architecture_decisions.md` (Static architecture limits).
+* **Lessons Learned**: `lessons_learned.md` (Dynamic memory. The QA Agent registers issues, bugs, and fixes during audits so future sessions avoid repeating past mistakes).
 
-### 2.5. Catálogo Modular de Habilidades (Skills Registry)
-Las capacidades se registran como plugins o protocolos dentro de `/.opencode/skills/`. El Orquestador restringe el uso de estas habilidades al agente adecuado en la fase correcta.
+### 2.5. Profile-Aware Modular Skills Registry
+Capabilities are packaged as modular plugins under `/.opencode/skills/`. The compiler registers these based on enabled profiles (e.g., Python profile disables JS and Embedded C skills), saving up to 80% of context window space.
 
 ---
 
-## 3. Coexistencia Multi-Perfil y Transpilador Autogestionado
+## 3. Coexistence & Self-Managed Transpilation
 
-El transpilador descompuesto permite que múltiples perfiles tecnológicos (`embedded-c-developer`, `python-developer`, `javascript-developer`) coexistan de forma concurrente:
+The prompt transpiler enables multi-stack coexistence (`embedded-c-developer`, `python-developer`, `javascript-developer`):
+1. **Concurrent Stacks**: The engine compiles global templates and mounts stack-specific properties cleanly.
+2. **Dynamic Hot-Loading**: Agents inspect active workspace files at initialization, dynamically selecting the profile and configuring linters, tests, and bypass constraints (e.g., `bypass_qa_execution` for complex embedded system cross-compilations).
+3. **Atomic Scaffolding**: Folder scaffolding and script compilations isolate stacks cleanly, keeping the workspace extremely light.
 
-1. **Soportes Concurrentes**: El motor compila las plantillas transversales y monta individualmente las habilidades, memorias y configuraciones de cada perfil.
-2. **Carga Dinámica en Caliente (Hot-Loading)**: Los agentes inspeccionan el tipo de archivos en el espacio de trabajo en tiempo de ejecución, detectando qué stack usar y parametrizando dinámicamente linters, suites de tests y modos de bypass (ej. `bypass_qa_execution` para compilaciones cruzadas complejas en sistemas embebidos).
-3. **Limpieza y Gestión Atómica**: Las opciones de instalación y remoción aíslan perfiles sin dejar rastro de código no deseado, reduciendo drásticamente el uso de tokens y optimizando el contexto de los modelos locales.
+---
+
+## 4. Automation Python Scripts & CLI Tools
+
+To guarantee 100% execution safety, zero formatting syntax errors, and prevent YAML corruption, the harness incorporates four automated CLI scripts.
+
+### 4.1. Harness State Manager (`state_manager.py`)
+- **Location**: `.harness/adaptation/scripts/state_manager.py` (Compiled to `.opencode/core/state_manager.py`).
+- **Description**: Zero-dependency module that parses, updates, and validates the state machine against `state_schema.yaml`. It exposes commands `state get` and `state update` under `adapt_harness.py`.
+
+### 4.2. Agent State Transition (`state_transition.py`)
+- **Location**: `.harness/roles/scripts/state_transition.py` (Compiled to `.opencode/agents/scripts/state_transition.py`).
+- **Description**: Used by agents (roles) to transition between phases and agents. It automatically validates changes, saves them cleanly, and prints the standard transition directive tag (e.g., `--> NEXT ROLE: QA Agent`).
+
+### 4.3. TDD Gatekeeper Runner (`tdd_gatekeeper_runner.py`)
+- **Location**: `.harness/skills/scripts/tdd_gatekeeper_runner.py` (Compiled to `.opencode/skills/scripts/tdd_gatekeeper_runner.py`).
+- **Description**: Executed by the developer agent during TDD verification. It resolves bypass parameters, executes linters and test suites, interprets outputs, and logs failures into `state.yaml`'s `last_error` field automatically.
+
+### 4.4. Skill Creator CLI (`skill_creator_cli.py`)
+- **Location**: `.harness/skills/scripts/skill_creator_cli.py` (Compiled to `.opencode/skills/scripts/skill_creator_cli.py`).
+- **Description**: Executed by the skill-creator agent to scaffold new skills, write standard SKILL.md templates, and run the compiler to dynamically catalog them inside `AGENTS.md`.

@@ -71,11 +71,27 @@ class TranspilerCore:
             
             self.compiled_items["agents"] += 1
             print(f"  + Agente transpilado: .opencode/agents/{agent_name}")
+
+        # Copiar scripts específicos de agentes si existen
+        src_scripts = os.path.join(roles_dir, "scripts")
+        if os.path.exists(src_scripts) and os.path.isdir(src_scripts):
+            dest_scripts = os.path.join(self.opencode_dir, "agents", "scripts")
+            os.makedirs(dest_scripts, exist_ok=True)
+            for s_file in os.listdir(src_scripts):
+                if s_file.endswith(".py"):
+                    src_s = os.path.join(src_scripts, s_file)
+                    dest_s = os.path.join(dest_scripts, s_file)
+                    with open(src_s, "r", encoding="utf-8") as f:
+                        s_content = f.read()
+                    s_content = apply_replacements(s_content)
+                    with open(dest_s, "w", encoding="utf-8") as f:
+                        f.write(s_content)
+                    print(f"  + Script de Agente copiado: .opencode/agents/scripts/{s_file}")
     
     def compile_core_scripts(self):
-        """Copia scripts core (lazy_loader, cache_manager) a .opencode/core/"""
+        """Copia scripts core (lazy_loader, cache_manager, state_manager) a .opencode/core/"""
         source_dir = os.path.join(self.harness_dir, "adaptation", "scripts")
-        core_scripts = ["lazy_loader.py", "cache_manager.py"]
+        core_scripts = ["lazy_loader.py", "cache_manager.py", "state_manager.py"]
         
         for script in core_scripts:
             src = os.path.join(source_dir, script)
@@ -141,7 +157,8 @@ class TranspilerCore:
             ],
             "core": [
                 "tdd_gatekeeper.md",
-                "skill-creator"
+                "skill-creator",
+                "file-translator"
             ]
         }
         
@@ -202,6 +219,22 @@ class TranspilerCore:
                 
                 self.compiled_items["skills"] += 1
                 print(f"  + Skill transpilada: .opencode/skills/{skill_name}/SKILL.md")
+
+        # Copiar scripts específicos de habilidades si existen
+        src_scripts = os.path.join(skills_dir, "scripts")
+        if os.path.exists(src_scripts) and os.path.isdir(src_scripts):
+            dest_scripts = os.path.join(self.opencode_dir, "skills", "scripts")
+            os.makedirs(dest_scripts, exist_ok=True)
+            for s_file in os.listdir(src_scripts):
+                if s_file.endswith(".py"):
+                    src_s = os.path.join(src_scripts, s_file)
+                    dest_s = os.path.join(dest_scripts, s_file)
+                    with open(src_s, "r", encoding="utf-8") as f:
+                        s_content = f.read()
+                    s_content = apply_replacements(s_content)
+                    with open(dest_s, "w", encoding="utf-8") as f:
+                        f.write(s_content)
+                    print(f"  + Script de Skill copiado: .opencode/skills/scripts/{s_file}")
     
     def compile_memory(self):
         """Copia archivos de memoria desde .harness/memory a .opencode/memory"""

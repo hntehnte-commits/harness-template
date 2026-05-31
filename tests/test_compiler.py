@@ -26,6 +26,7 @@ from path_translator import (
 )
 from lazy_loader import SkillRegistry, ProfileAwareLoader
 from cache_manager import DecisionsCache, ContextWindowTracker
+from state_manager import HarnessStateManager
 
 
 class TestPathTranslator(unittest.TestCase):
@@ -143,13 +144,13 @@ class TestTranspilerCore(unittest.TestCase):
             self.assertEqual(result, expected)
     
     def test_compile_core_scripts(self):
-        """Verifica copia de scripts core (lazy_loader, cache_manager)"""
+        """Verifica copia de scripts core (lazy_loader, cache_manager, state_manager)"""
         # Crear directorio de origen simulado
         src_scripts = os.path.join(self.temp_dir, ".harness/adaptation/scripts")
         os.makedirs(src_scripts, exist_ok=True)
         
         # Crear archivos fuente simulados
-        for script in ["lazy_loader.py", "cache_manager.py"]:
+        for script in ["lazy_loader.py", "cache_manager.py", "state_manager.py"]:
             with open(os.path.join(src_scripts, script), "w") as f:
                 f.write(f"# {script}\nprint('hello from {script}')")
         
@@ -157,7 +158,7 @@ class TestTranspilerCore(unittest.TestCase):
         self.transpiler.compile_core_scripts()
         
         # Verificar que se copiaron
-        for script in ["lazy_loader.py", "cache_manager.py"]:
+        for script in ["lazy_loader.py", "cache_manager.py", "state_manager.py"]:
             dest = os.path.join(self.temp_dir, ".opencode/core", script)
             self.assertTrue(os.path.exists(dest), f"{script} no copiado a .opencode/core/")
     
@@ -214,7 +215,7 @@ class TestTranspilerCore(unittest.TestCase):
         os.makedirs(os.path.join(harness_dir, "adaptation/scripts"), exist_ok=True)
         
         # Archivos requeridos
-        for script in ["lazy_loader.py", "cache_manager.py"]:
+        for script in ["lazy_loader.py", "cache_manager.py", "state_manager.py"]:
             with open(os.path.join(harness_dir, "adaptation/scripts", script), "w") as f:
                 f.write(f"# {script}")
         
@@ -228,13 +229,14 @@ class TestTranspilerCore(unittest.TestCase):
         self.transpiler.compile_all("pointer text")
         
         # Verificar que se crearon los nuevos componentes
-        self.assertGreaterEqual(self.transpiler.compiled_items["core_scripts"], 2)
+        self.assertGreaterEqual(self.transpiler.compiled_items["core_scripts"], 3)
         self.assertGreaterEqual(self.transpiler.compiled_items["profiles_config"], 1)
         self.assertGreaterEqual(self.transpiler.compiled_items["config"], 1)
         
         # Verificar archivos en destino
         self.assertTrue(os.path.exists(os.path.join(self.temp_dir, ".opencode/core/lazy_loader.py")))
         self.assertTrue(os.path.exists(os.path.join(self.temp_dir, ".opencode/core/cache_manager.py")))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, ".opencode/core/state_manager.py")))
         self.assertTrue(os.path.exists(os.path.join(self.temp_dir, ".opencode/profiles_enabled.yaml")))
 
 
@@ -452,6 +454,129 @@ class TestCacheManager(unittest.TestCase):
         self.assertEqual(result, "persisted_value")
 
 
+class TestStateManager(unittest.TestCase):
+    """Pruebas para el módulo state_manager de automatización"""
+    
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.manager = HarnessStateManager(workspace_dir=self.temp_dir, use_opencode=False)
+        
+        # Crear estructura de carpetas mock en temp_dir
+        os.makedirs(os.path.join(self.temp_dir, ".harness/artifacts/current_run"), exist_ok=True)
+        os.makedirs(os.path.join(self.temp_dir, ".harness/artifacts/templates"), exist_ok=True)
+        
+    def tearDown(self):
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+            
+    def test_get_initial_state(self):
+        """Verifica que el estado inicial tiene las claves correctas"""
+        state = self.manager.get_initial_state()
+        self.assertEqual(state["current_phase"], "Initialization")
+        self.assertEqual(state["active_agent"], "orchestrator")
+        self.assertFalse(state["plan_approved"])
+        self.assertEqual(state["test_status"], "unknown")
+        
+    def test_parse_valid_yaml(self):
+        """Verifica que el parser de YAML simple funciona correctamente"""
+        yaml_content = """# Comentario inicial
+state:
+  current_phase: "Contract"
+  active_agent: "spec"
+  plan_approved: true
+  active_profile: "python-developer"
+  task_checklist:
+    - task: "Crear especificaciones"
+      status: "completed"
+    - task: "Escribir test de integración"
+      status: "pending"
+  test_status: "passing"
+  last_error: "Ninguno"
+"""
+        state = self.manager.parse_yaml(yaml_content)
+        self.assertEqual(state["current_phase"], "Contract")
+        self.assertEqual(state["active_agent"], "spec")
+        self.assertTrue(state["plan_approved"])
+        self.assertEqual(state["active_profile"], "python-developer")
+        self.assertEqual(state["test_status"], "passing")
+        self.assertEqual(state["last_error"], "Ninguno")
+        self.assertEqual(len(state["task_checklist"]), 2)
+        self.assertEqual(state["task_checklist"][0]["task"], "Crear especificaciones")
+        self.assertEqual(state["task_checklist"][0]["status"], "completed")
+
+    def test_serialize_and_deserialize(self):
+        """Verifica ciclo completo de serialización e interpretación"""
+        state = {
+            "current_phase": "Implementation",
+            "active_agent": "python-developer",
+            "plan_approved": True,
+            "active_profile": "python-developer",
+            "task_checklist": [
+                {"task": "Desarrollar feature A", "status": "in_progress"}
+            ],
+            "test_status": "failing",
+            "last_error": "SyntaxError: invalid syntax"
+        }
+        
+        serialized = self.manager.serialize_yaml(state)
+        self.assertIn("current_phase: \"Implementation\"", serialized)
+        self.assertIn("active_agent: \"python-developer\"", serialized)
+        self.assertIn("plan_approved: true", serialized)
+        self.assertIn("task: \"Desarrollar feature A\"", serialized)
+        self.assertIn("status: \"in_progress\"", serialized)
+        self.assertIn("test_status: \"failing\"", serialized)
+        self.assertIn("last_error: \"SyntaxError: invalid syntax\"", serialized)
+        
+        parsed = self.manager.parse_yaml(serialized)
+        self.assertEqual(parsed["current_phase"], "Implementation")
+        self.assertEqual(parsed["active_agent"], "python-developer")
+        self.assertTrue(parsed["plan_approved"])
+        self.assertEqual(parsed["test_status"], "failing")
+        self.assertEqual(parsed["last_error"], "SyntaxError: invalid syntax")
+        self.assertEqual(len(parsed["task_checklist"]), 1)
+        self.assertEqual(parsed["task_checklist"][0]["task"], "Desarrollar feature A")
+        self.assertEqual(parsed["task_checklist"][0]["status"], "in_progress")
+        
+    def test_validate_schema_success(self):
+        """Verifica paso exitoso de validación de esquema"""
+        state = self.manager.get_initial_state()
+        success, msg = self.manager.validate_schema(state)
+        self.assertTrue(success)
+        self.assertEqual(msg, "")
+        
+    def test_validate_schema_invalid_phase(self):
+        """Verifica que fases no válidas fallen la validación"""
+        state = self.manager.get_initial_state()
+        state["current_phase"] = "FaseInventada"
+        success, msg = self.manager.validate_schema(state)
+        self.assertFalse(success)
+        self.assertIn("Fase inválida", msg)
+        
+    def test_validate_schema_invalid_agent(self):
+        """Verifica que agentes no válidos fallen la validación"""
+        state = self.manager.get_initial_state()
+        state["active_agent"] = "hacker-agent"
+        success, msg = self.manager.validate_schema(state)
+        self.assertFalse(success)
+        self.assertIn("Agente inválido", msg)
+
+    def test_save_and_load_state_file(self):
+        """Verifica que se puede guardar y leer de disco atómicamente"""
+        state = self.manager.get_initial_state()
+        state["current_phase"] = "Contract"
+        state["active_agent"] = "spec"
+        state["plan_approved"] = True
+        
+        # Guardar a disco
+        self.manager.save_state(state)
+        
+        # Cargar desde disco
+        loaded_state = self.manager.load_state()
+        self.assertEqual(loaded_state["current_phase"], "Contract")
+        self.assertEqual(loaded_state["active_agent"], "spec")
+        self.assertTrue(loaded_state["plan_approved"])
+
+
 class TestIntegration(unittest.TestCase):
     """Pruebas de integración"""
     
@@ -488,6 +613,7 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestRegistryBuilder))
     suite.addTests(loader.loadTestsFromTestCase(TestLazyLoader))
     suite.addTests(loader.loadTestsFromTestCase(TestCacheManager))
+    suite.addTests(loader.loadTestsFromTestCase(TestStateManager))
     suite.addTests(loader.loadTestsFromTestCase(TestIntegration))
     
     runner = unittest.TextTestRunner(verbosity=2)
